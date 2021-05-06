@@ -1,10 +1,6 @@
 import win32ui
 import winsound
 import win32con
-import requests
-import bs4
-import sqlite3
-import getpass
 from socket import *
 
 serverPort = 5555
