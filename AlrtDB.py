@@ -10,7 +10,7 @@ uid = str(uuid.uuid4())
 username = str(getpass.getuser())
 #Es conecta a la base de dades
 conn = sqlite3.connect("uid.db")
-#Abans de crear la taula, verifica que no existeix i el crea. També s'intesertarà el usuari actual a la base de dades local
+#Abans de crear la taula, verifica que no existeix i el crea. També s'insertarà l'usuari actual a la base de dades local
 tb_create = ('''CREATE TABLE users(user,uid)''')
 tb_exists = ("SELECT name FROM sqlite_master WHERE type='table' AND name='users'")
 if not conn.execute(tb_exists).fetchone():
