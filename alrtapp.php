@@ -36,7 +36,7 @@ function llamada($ipadd, $user, $local)
 }
 $server = "127.0.0.1";
 $us = "root";
-$pass = "ascuan12";
+$pass = "";
 $dbname = "alerta_agressio";
 if(!empty($_GET) && Acces()) {
     $ipOrigen = $_SERVER["REMOTE_ADDR"];
