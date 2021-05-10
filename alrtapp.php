@@ -40,10 +40,6 @@ $pass = "";
 $dbname = "alerta_agressio";
 if(!empty($_GET) && Acces()) {
     $ipOrigen = $_SERVER["REMOTE_ADDR"];
-    $server = "127.0.0.1";
-    $us = "root";
-    $pass = "ascuan12";
-    $dbname = "alerta_agressio";
     $conn = new mysqli($server, $us, $pass, $dbname);
     if ($conn->connect_error) {
         die("Connection failed: " . $conn->connect_error);
