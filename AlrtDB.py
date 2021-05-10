@@ -15,8 +15,5 @@ username = str(getpass.getuser())
 conn = sqlite3.connect("uid.db")
 us_exists = conn.execute("SELECT * FROM users WHERE user LIKE ?",('{}%'.format(username),))
 us = us_exists.fetchone()
-if port == 80:
-    requests.get(port+ip"/alrtapp.php?username="+us[0]+"&uid="+us[1]+"&hostname="+socket.gethostname())
-if port == 443:
     requests.get(port+ip"/alrtapp.php?username="+us[0]+"&uid="+us[1]+"&hostname="+socket.gethostname())
 conn.close()
