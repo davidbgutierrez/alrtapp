@@ -1,5 +1,5 @@
-<?php
-$neighbors = array("1" => array(2), "2"=>array(3,4,5),"3"=>array(4,5),"4"=>array(3,5,6),"5"=>array(4,6),"6"=>array(4,5,7),"7"=>array(5,6));
+#Sectors i els seus adjacents. Ordenar els sectors adjacents per aproximació
+$neighbors = array("1" => array(2), "2"=>array(1,3,4),"3"=>array(4,5),"4"=>array(3,5,6),"5"=>array(4,6),"6"=>array(4,5,7),"7"=>array(6,5));
 function Acces()
 {
     $inicial = '192.168.1.10';
@@ -36,10 +36,14 @@ function llamada($ipadd, $user, $local)
 }
 $server = "127.0.0.1";
 $us = "root";
-$pass = "";
+$pass = "ascuan12";
 $dbname = "alerta_agressio";
 if(!empty($_GET) && Acces()) {
     $ipOrigen = $_SERVER["REMOTE_ADDR"];
+    $server = "127.0.0.1";
+    $us = "root";
+    $pass = "ascuan12";
+    $dbname = "alerta_agressio";
     $conn = new mysqli($server, $us, $pass, $dbname);
     if ($conn->connect_error) {
         die("Connection failed: " . $conn->connect_error);
@@ -93,6 +97,11 @@ if(!empty($_GET) && Acces()) {
         fclose($handle);
         exit;
     }
+    #Registra l'alerta
+    $text = date('d-m-Y H:i:s') . "Usuari: " . $user . " #---# Hostname:  " . $hostname . "#---# IP: " . $ipOrigen  ."\n";
+    $handle = fopen("/php_logs/alertes.txt", 'a');
+    fwrite($handle, $text);
+    fclose($handle);
     $searchSQL = "SELECT o.ip, u.nom FROM ordinador o, ubicacio u WHERE o.id_ubicacio = u.id 
                                                   AND u.sector IN (SELECT sector FROM ubicacio uu, ordinador oo 
                                                   WHERE uu.id = oo.id_ubicacio AND oo.hostname LIKE '$hostname') 
@@ -132,5 +141,7 @@ if(!empty($_GET) && Acces()) {
             }
         }
 
+} else {
+    echo "Accés denegat";
 }
 ?>
