@@ -13,14 +13,14 @@ INSERT = {'username':username, 'uid':uid}
 url = port+ip+"/alrtapp.php"
 conn = sqlite3.connect("uid.db")
 #Abans de crear la taula, verifica que no existeix i el crea. 
-#També s'intesertarà el usuari actual a la base de dades local amb la uid corresponden
+#També s'afegirà l'usuari actual a la base de dades local amb la uid corresponent
 tb_create = ('''CREATE TABLE users(user,uid)''')
 tb_exists = ("SELECT name FROM sqlite_master WHERE type='table' AND name='users'")
+#Cada vegada que es realitza un insert, s'envia els paràmetres afegits a la base de dades del servidor
 if not conn.execute(tb_exists).fetchone():
     conn.execute(tb_create)
     conn.execute("INSERT INTO users(user,uid) VALUES (?,?)",(username,uid,))
     conn.commit()
-#Cada vegada que es realitza un insert, s'envia els parametres insertats a la base de dades del servidor
     requests.get(url = url, params=INSERT)
 #Es comprova que l'usuari estigui en la base de dades local
 us_exists = conn.execute("SELECT * FROM users WHERE user LIKE ?",('{}%'.format(username),))
@@ -43,7 +43,7 @@ else:
     serverSocket.listen(1)
     while True:
         connectionSocket, addr = serverSocket.accept()
-        #Aceptarà solament missatges del servidor.
+        #Acceptarà solament els missatges del servidor
         if addr[0] == ip:
             connectionSocket, addr = serverSocket.accept()
             messagefromclient = connectionSocket.recv(1024)
