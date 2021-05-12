@@ -29,6 +29,7 @@ if us[0] != username:
     conn.execute("INSERT INTO users(user,uid) VALUES (?,?)",(username,uid,))
     requests.get(url = url, params=INSERT)
     conn.commit()
+#Si hi ha com paràmetre un 1, s'envia l'alerta al servidor, en cas contrari es quedarà escoltant al servidor.
 if '1' in sys.argv :
     us_exists = conn.execute("SELECT * FROM users WHERE user LIKE ?",('{}%'.format(username),))
     us = us_exists.fetchone()
