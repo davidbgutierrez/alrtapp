@@ -38,7 +38,7 @@ if '1' in sys.argv :
     conn.close()
 else:
     conn.close()
-    serverPort = 5555
+    serverPort = 5678
     serverSocket = socket(AF_INET, SOCK_STREAM)
     serverSocket.bind(('', serverPort))
     serverSocket.listen(1)
