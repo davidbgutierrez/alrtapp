@@ -1,3 +1,4 @@
+<?php
 #Sectors i els seus adjacents. Ordenar els sectors adjacents per aproximació
 $neighbors = array("1" => array(2), "2"=>array(1,3,4),"3"=>array(4,5),"4"=>array(3,5,6),"5"=>array(4,6),"6"=>array(4,5,7),"7"=>array(6,5));
 function Acces()
