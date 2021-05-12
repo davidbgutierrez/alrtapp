@@ -1,50 +1,52 @@
-import win32ui
-import winsound
-import win32con
-import requests
-import bs4
-import sqlite3
-import getpass
+import win32ui, winsound, win32con, sqlite3, getpass, uuid, sys, requests
+from subprocess import check_output
 from socket import *
-import uuid
+hostname = check_output("hostname", shell=True).decode().rstrip()
 ip = str(sys.argv[1])
-if str(sys.argv[2]) == 80:
+if str(sys.argv[2]) == '80':
     port = "http://"
-if str(sys.argv[2]) == 443:
-    port ="https://"
+if str(sys.argv[2]) == '443':
+    port = "https://"
 uid = str(uuid.uuid4())
 username = str(getpass.getuser())
+INSERT = {'username':username, 'uid':uid}
+url = port+ip+"/alrtapp.php"
 conn = sqlite3.connect("uid.db")
-#Abans de crear la taula, verifica que no existeix i el crea. També s'intesertarà el usuari actual a la base de dades local
+#Abans de crear la taula, verifica que no existeix i el crea. 
+#També s'intesertarà el usuari actual a la base de dades local amb la uid corresponden
 tb_create = ('''CREATE TABLE users(user,uid)''')
 tb_exists = ("SELECT name FROM sqlite_master WHERE type='table' AND name='users'")
 if not conn.execute(tb_exists).fetchone():
     conn.execute(tb_create)
     conn.execute("INSERT INTO users(user,uid) VALUES (?,?)",(username,uid,))
     conn.commit()
-#Cada vegada que es realitza un insert, s'envia els parametres insertats a la base de dades central
-    requests.get("http://192.168.1.12/sqli.php?username="+username+"&uid="+uid)
+#Cada vegada que es realitza un insert, s'envia els parametres insertats a la base de dades del servidor
+    requests.get(url = url, params=INSERT)
+#Es comprova que l'usuari estigui en la base de dades local
 us_exists = conn.execute("SELECT * FROM users WHERE user LIKE ?",('{}%'.format(username),))
 us = us_exists.fetchone()
-#Es comprova que l'usuari estigui en la base de dades local
 if us[0] != username:
     conn.execute("INSERT INTO users(user,uid) VALUES (?,?)",(username,uid,))
-    requests.get(port+ip+"alrtapp.php?username="+us[0]+"&uid="+us[1])
-conn.commit()
-conn.close()
-serverPort = 5555
-serverSocket = socket(AF_INET, SOCK_STREAM)
-serverSocket.bind(('', serverPort))
-serverSocket.listen(1)
-while True:
-    connectionSocket, addr = serverSocket.accept()
-    if addr[0] == '192.168.1.12':
+    requests.get(url = url, params=INSERT)
+    conn.commit()
+if '1' in sys.argv :
+    us_exists = conn.execute("SELECT * FROM users WHERE user LIKE ?",('{}%'.format(username),))
+    us = us_exists.fetchone()
+    ALERTA = {'username':username, 'uid':us[1], 'hostname': hostname}
+    requests.get(url = url, params= ALERTA)
+    conn.close()
+else:
+    conn.close()
+    serverPort = 5555
+    serverSocket = socket(AF_INET, SOCK_STREAM)
+    serverSocket.bind(('', serverPort))
+    serverSocket.listen(1)
+    while True:
         connectionSocket, addr = serverSocket.accept()
-        messagefromclient = connectionSocket.recv(1024)
-        message = str(messagefromclient, 'utf-8')
-        r = requests.get(message)
-        soup = bs4.BeautifulSoup(r.text, 'html.parser')
-        host = soup.select('div:nth-child(2)')[0].text.strip()
-        user = soup.select('div:nth-child(3)')[0].text.strip()
-        winsound.MessageBeep(winsound.MB_OK)
-        win32ui.MessageBox("##ALERTA DE POSSIBLE AGRESSIÓ##\n"+host+'\n'+user,"ALERTA",0x1000)
+        #Aceptarà solament missatges del servidor.
+        if addr[0] == ip:
+            connectionSocket, addr = serverSocket.accept()
+            messagefromclient = connectionSocket.recv(1024)
+            message = str(messagefromclient, 'utf-8')
+            winsound.MessageBeep(winsound.MB_OK)
+            win32ui.MessageBox(message,"ALERTA",0x1000)
