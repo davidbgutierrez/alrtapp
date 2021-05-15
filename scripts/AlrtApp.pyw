@@ -33,9 +33,9 @@ if not conn.execute(tb_exists).fetchone():
         sys.exit(0)
     conn.execute("INSERT INTO users(user,uid) VALUES (?,?)",(username,uid,))
 #Es comprova que l'usuari estigui en la base de dades local
-us_exists = conn.execute("SELECT * FROM users WHERE user LIKE ?",('{}%'.format(username),))
+us_exists = conn.execute("SELECT user,uid FROM users WHERE user LIKE ?",('{}%'.format(username),))
 us = us_exists.fetchone()
-if us[0] != username:
+if str(us) == 'None' :
     try:
         requests.get(url = url, params=INSERT)
     except requests.ConnectionError:
@@ -45,7 +45,7 @@ if us[0] != username:
     conn.commit()
 #Si hi ha com paràmetre un 1, s'envia l'alerta al servidor, en cas contrari es quedarà escoltant al servidor.
 if '1' in sys.argv :
-    us_exists = conn.execute("SELECT * FROM users WHERE user LIKE ?",('{}%'.format(username),))
+    us_exists = conn.execute("SELECT user,uid FROM users WHERE user LIKE ?",('{}%'.format(username),))
     us = us_exists.fetchone()
     ALERTA = {'username':username, 'uid':us[1], 'hostname': hostname}
     try:
