@@ -30,7 +30,7 @@ if not conn.execute(tb_exists).fetchone():
         requests.get(url = url, params=INSERT)
     except requests.ConnectionError:
         win32ui.MessageBox("Error al conectar amb el servidor","ERROR",0x1000)
-        sys.exit(0)
+        sys.exit(1)
     conn.execute("INSERT INTO users(user,uid) VALUES (?,?)",(username,uid,))
 #Es comprova que l'usuari estigui en la base de dades local
 us_exists = conn.execute("SELECT user,uid FROM users WHERE user LIKE ?",('{}%'.format(username),))
@@ -43,7 +43,7 @@ if str(us) == 'None' :
         sys.exit(0)
     conn.execute("INSERT INTO users(user,uid) VALUES (?,?)",(username,uid,))
     conn.commit()
-#Si hi ha com paràmetre un 1, s'envia l'alerta al servidor, en cas contrari es quedarà escoltant al servidor.
+#Si hi ha com paràmetre un 1, s'envia l'alerta al servidor. En cas contrari es quedarà escoltant al servidor.
 if '1' in sys.argv :
     us_exists = conn.execute("SELECT user,uid FROM users WHERE user LIKE ?",('{}%'.format(username),))
     us = us_exists.fetchone()
@@ -51,9 +51,9 @@ if '1' in sys.argv :
     try:
         requests.get(url = url, params=ALERTA)
     except requests.ConnectionError:
+        conn.close()
         win32ui.MessageBox("Error al conectar amb el servidor","ERROR",0x1000)
-        sys.exit(0)
-    conn.close()
+        sys.exit(1)
 else:
     conn.commit()
     conn.close()
