@@ -1,7 +1,4 @@
 <?php
-#CREATE TABLE uids(uid varchar(50) not null primary key, id_usuari varchar(7) not null, CONSTRAINT FK_idusuari FOREIGN KEY (id_usuari) REFERENCES usuari(id)
-#192.168.1.12/alrtapp.php?username=david&uid=dhfyugewtfwewtq&hostname=DSKT-DAVID
-#SELECT count(*) as total FROM ordinador o, ubicacio u WHERE o.id_ubicacio = u.id and u.sector IN (select uu.sector from ordinador oo, ubicacio uu where oo.id_ubicacio = uu.id and oo.hostname LIKE 'HSP043') group by u.sector;
 #Sectors i els seus adjacents. Ordenar els sectors adjacents per aproximació
 $neighbors = array("1" => array(2), "2"=>array(1,3,4),"3"=>array(4,5),"4"=>array(3,5,6),"5"=>array(4,6),"6"=>array(4,5,7),"7"=>array(6,5));
 function Acces()
