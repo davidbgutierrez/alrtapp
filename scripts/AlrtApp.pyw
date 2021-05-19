@@ -1,9 +1,28 @@
-import pkg_resources.py2_warn
-import win32ui, winsound, sqlite3, getpass, uuid, sys, requests
+from tkinter import *
+import winsound, sqlite3, getpass, uuid, sys, requests, pkg_resources.py2_warn
 from subprocess import check_output
 from subprocess import DEVNULL
 from socket import *
 from infi.systray import SysTrayIcon
+def gui(mess):
+    w = 250
+    h = 200
+    root = Tk()
+    exitButton = Button(root, text="D'acord", command=root.destroy, font="ARIAL", bg="GRAY", fg="BLACK")
+    exitButton.pack(side=BOTTOM)
+    root.resizable(0, 0)
+    root.config(bg="red")
+    root.wm_title("ALERTA")
+    root.wm_attributes("-topmost", 1)
+    ws = root.winfo_screenwidth()
+    hs = root.winfo_screenheight()
+    x = (ws/2) - (w/2)
+    y = (hs/2) - (h/2)
+    root.geometry('%dx%d+%d+%d' % (w, h, x, y))
+    lbl2 = Label (root, text=message, font="verdana", bg="red", fg="BLACK")
+    lbl2.place(relx=0.5, rely=0.5, anchor=CENTER)
+    root.iconbitmap('icono.ico')
+    root.mainloop()
 def sortir(systray):
     systray.shutdown()
     sys.exit(0)
@@ -29,8 +48,7 @@ if not conn.execute(tb_exists).fetchone():
     try:
         requests.get(url = url, params=INSERT)
     except requests.ConnectionError:
-        win32ui.MessageBox("Error al conectar amb el servidor","ERROR",0x1000)
-        sys.exit(1)
+        sys.exit(0)
     conn.execute("INSERT INTO users(user,uid) VALUES (?,?)",(username,uid,))
 #Es comprova que l'usuari estigui en la base de dades local
 us_exists = conn.execute("SELECT user,uid FROM users WHERE user LIKE ?",('{}%'.format(username),))
@@ -39,11 +57,10 @@ if str(us) == 'None' :
     try:
         requests.get(url = url, params=INSERT)
     except requests.ConnectionError:
-        win32ui.MessageBox("Error al conectar amb el servidor","ERROR",0x1000)
         sys.exit(0)
     conn.execute("INSERT INTO users(user,uid) VALUES (?,?)",(username,uid,))
     conn.commit()
-#Si hi ha com paràmetre un 1, s'envia l'alerta al servidor. En cas contrari es quedarà escoltant al servidor.
+#Si hi ha com paràmetre un 1, s'envia l'alerta al servidor, en cas contrari es quedarà escoltant al servidor.
 if '1' in sys.argv :
     us_exists = conn.execute("SELECT user,uid FROM users WHERE user LIKE ?",('{}%'.format(username),))
     us = us_exists.fetchone()
@@ -51,9 +68,8 @@ if '1' in sys.argv :
     try:
         requests.get(url = url, params=ALERTA)
     except requests.ConnectionError:
-        conn.close()
-        win32ui.MessageBox("Error al conectar amb el servidor","ERROR",0x1000)
-        sys.exit(1)
+        sys.exit(0)
+    conn.close()
 else:
     conn.commit()
     conn.close()
@@ -71,4 +87,4 @@ else:
             messagefromclient = connectionSocket.recv(1024)
             message = str(messagefromclient, 'utf-8')
             winsound.MessageBeep(winsound.MB_OK)
-            win32ui.MessageBox(message,"ALERTA",0x1000)
+            gui(message)
