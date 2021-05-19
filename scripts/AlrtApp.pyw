@@ -5,27 +5,27 @@ from subprocess import DEVNULL
 from socket import *
 from infi.systray import SysTrayIcon
 def gui(mess):
-    w = 250
-    h = 200
+    w = 500
+    h = 250
     root = Tk()
-    exitButton = Button(root, text="D'acord", command=root.destroy, font="ARIAL", bg="GRAY", fg="BLACK")
+    exitButton = Button(root, text="D'acord", command=root.destroy, font="verdana", bg="gold", fg="BLACK")
     exitButton.pack(side=BOTTOM)
     root.resizable(0, 0)
-    root.config(bg="red")
-    root.wm_title("ALERTA")
+    root.config(bg="firebrick3")
+    root.wm_title("ALERTA D'AGRESSIÓ")
     root.wm_attributes("-topmost", 1)
     ws = root.winfo_screenwidth()
     hs = root.winfo_screenheight()
     x = (ws/2) - (w/2)
     y = (hs/2) - (h/2)
     root.geometry('%dx%d+%d+%d' % (w, h, x, y))
-    lbl2 = Label (root, text=message, font="verdana", bg="red", fg="BLACK")
+    lbl2 = Label (root, text=mess, font="verdana", bg="firebrick3", fg="ghost white")
     lbl2.place(relx=0.5, rely=0.5, anchor=CENTER)
     root.iconbitmap('icono.ico')
     root.mainloop()
 def sortir(systray):
     systray.shutdown()
-    sys.exit(0)
+    sys.exit(1)
 hostname = check_output("hostname", stdin=DEVNULL, stderr=DEVNULL, shell=True).decode('utf-8').rstrip()
 ip = str(sys.argv[1])
 if str(sys.argv[2]) == '80':
@@ -37,6 +37,11 @@ username = str(getpass.getuser())
 INSERT = {'username':username, 'uid':uid}
 url = port+ip+"/alrtapp.php"
 conn = sqlite3.connect("uid.db")
+try:
+    requests.get(url = url)
+except requests.ConnectionError:
+    gui("Error de connexió al servidor")
+    sys.exit(1)
 #Abans de crear la taula, verifica que no existeix i el crea. 
 #També s'afegirà l'usuari actual a la base de dades local amb la uid corresponent
 tb_create = ('''CREATE TABLE users(user,uid)''')
@@ -48,7 +53,8 @@ if not conn.execute(tb_exists).fetchone():
     try:
         requests.get(url = url, params=INSERT)
     except requests.ConnectionError:
-        sys.exit(0)
+        gui("Error de connexió")
+        sys.exit(1)
     conn.execute("INSERT INTO users(user,uid) VALUES (?,?)",(username,uid,))
 #Es comprova que l'usuari estigui en la base de dades local
 us_exists = conn.execute("SELECT user,uid FROM users WHERE user LIKE ?",('{}%'.format(username),))
@@ -57,7 +63,8 @@ if str(us) == 'None' :
     try:
         requests.get(url = url, params=INSERT)
     except requests.ConnectionError:
-        sys.exit(0)
+        gui("Error de connexió")
+        sys.exit(1)
     conn.execute("INSERT INTO users(user,uid) VALUES (?,?)",(username,uid,))
     conn.commit()
 #Si hi ha com paràmetre un 1, s'envia l'alerta al servidor, en cas contrari es quedarà escoltant al servidor.
@@ -68,7 +75,8 @@ if '1' in sys.argv :
     try:
         requests.get(url = url, params=ALERTA)
     except requests.ConnectionError:
-        sys.exit(0)
+        gui("Error de connexió")
+        sys.exit(1)
     conn.close()
 else:
     conn.commit()
