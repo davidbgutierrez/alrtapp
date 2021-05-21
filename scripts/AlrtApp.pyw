@@ -4,9 +4,9 @@ from subprocess import check_output
 from subprocess import DEVNULL
 from socket import *
 from infi.systray import SysTrayIcon
-def gui(mess):
-    if mess == "Error de connexió amb el servidor" or mess == "Falta introduïr paràmetres":
-        w = 280
+def gui(mess,check):
+    if check == 1:
+        w = 350
         h = 100
         back = "white"
         fore = "black"
@@ -36,52 +36,53 @@ def gui(mess):
 def sortir(systray):
     systray.shutdown()
     sys.exit(1)
+def switch(var):
+    return{
+        '80': "http://",
+        '443': "https://"
+    }.get(var,False)
 hostname = check_output("hostname", stdin=DEVNULL, stderr=DEVNULL, shell=True).decode('utf-8').rstrip()
 if len(sys.argv) <= 2:
-    gui("Falta introduïr paràmetres")
+    gui("Falta introduïr paràmetres",1)
     sys.exit(1)
 else:
     ip = str(sys.argv[1])
-    if str(sys.argv[2]) == '80':
-        port = "http://"
-    if str(sys.argv[2]) == '443':
-        port = "https://"
+    if (switch(sys.argv[2]) != False):
+        port = switch(sys.argv[2])
+    else:
+        gui("Segon paràmetre no valid.",1)
+        sys.exit(1)
 uid = str(uuid.uuid4())
 username = str(getpass.getuser())
 INSERT = {'username':username, 'uid':uid}
 url = port+ip+"/alrtapp.php"
-conn = sqlite3.connect("uid.db")
 try:
     requests.get(url = url)
 except requests.ConnectionError:
-    gui("Error de connexió amb el servidor")
+    gui("Error de connexió amb el servidor",1)
     sys.exit(1)
-#Abans de crear la taula, verifica que no existeix i el crea. 
-#També s'afegirà l'usuari actual a la base de dades local amb la uid corresponent
+conn = sqlite3.connect("uid.db")
 tb_create = ('''CREATE TABLE users(user,uid)''')
 tb_exists = ("SELECT name FROM sqlite_master WHERE type='table' AND name='users'")
-#Cada vegada que es realitza un insert, s'envia els paràmetres afegits a la base de dades del servidor
 if not conn.execute(tb_exists).fetchone():
     conn.execute(tb_create)
     conn.commit()
     try:
         requests.get(url = url, params=INSERT)
     except requests.ConnectionError:
-        gui("Error de connexió amb el servidor")
+        gui("Error de connexió amb el servidor",1)
         sys.exit(1)
-    conn.execute("INSERT INTO users(user,uid) VALUES (?,?)",(username,uid,))
-#Es comprova que l'usuari estigui en la base de dades local
+conn.execute("INSERT INTO users(user,uid) VALUES (?,?)",(username,uid,))
 us_exists = conn.execute("SELECT user,uid FROM users WHERE user LIKE ?",('{}%'.format(username),))
 us = us_exists.fetchone()
 if str(us) == 'None' :
     try:
         requests.get(url = url, params=INSERT)
     except requests.ConnectionError:
-        gui("Error de connexió amb el servidor")
+        gui("Error de connexió amb el servidor",1)
         sys.exit(1)
-    conn.execute("INSERT INTO users(user,uid) VALUES (?,?)",(username,uid,))
-    conn.commit()
-#Si hi ha com paràmetre un 1, s'envia l'alerta al servidor, en cas contrari es quedarà escoltant al servidor.
+conn.execute("INSERT INTO users(user,uid) VALUES (?,?)",(username,uid,))
+conn.commit()
 if '1' in sys.argv :
     us_exists = conn.execute("SELECT user,uid FROM users WHERE user LIKE ?",('{}%'.format(username),))
     us = us_exists.fetchone()
@@ -89,11 +90,10 @@ if '1' in sys.argv :
     try:
         requests.get(url = url, params=ALERTA)
     except requests.ConnectionError:
-        gui("Error de connexió amb el servidor")
+        gui("Error de connexió amb el servidor",1)
         sys.exit(1)
     conn.close()
 else:
-    conn.commit()
     conn.close()
     systray = SysTrayIcon("icono.ico", "AlrtApp", on_quit=sortir)
     systray.start()
@@ -109,4 +109,4 @@ else:
             messagefromclient = connectionSocket.recv(1024)
             message = str(messagefromclient, 'utf-8')
             winsound.MessageBeep(winsound.MB_OK)
-            gui(message)
+            gui(message,0)
