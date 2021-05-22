@@ -67,24 +67,19 @@ except requests.ConnectionError:
     gui("Error de connexió amb el servidor",1)
     sys.exit(1)
 conn = sqlite3.connect("uid.db")
-#Abans de crear la taula, verifica que no existeix i el crea. 
-#També s'afegirà l'usuari actual a la base de dades local amb la uid corresponent
 tb_create = ('''CREATE TABLE users(user,uid)''')
 tb_exists = ("SELECT name FROM sqlite_master WHERE type='table' AND name='users'")
-#Cada vegada que es realitza un insert, s'envia els paràmetres afegits a la base de dades del servidor
 if not conn.execute(tb_exists).fetchone():
     conn.execute(tb_create)
     conn.commit()
     requests.get(url = url, params=INSERT)
-conn.execute("INSERT INTO users(user,uid) VALUES (?,?)",(username,uid,))
-#Es comprova que l'usuari estigui en la base de dades local
+    conn.execute("INSERT INTO users(user,uid) VALUES (?,?)",(username,uid,))
 us_exists = conn.execute("SELECT user,uid FROM users WHERE user LIKE ?",('{}%'.format(username),))
 us = us_exists.fetchone()
 if str(us) == 'None' :
     requests.get(url = url, params=INSERT)
     conn.execute("INSERT INTO users(user,uid) VALUES (?,?)",(username,uid,))
     conn.commit()
-#Si hi ha com paràmetre un 1, s'envia l'alerta al servidor, en cas contrari es quedarà escoltant al servidor.
 if '1' in sys.argv :
     us_exists = conn.execute("SELECT user,uid FROM users WHERE user LIKE ?",('{}%'.format(username),))
     us = us_exists.fetchone()
@@ -102,7 +97,6 @@ else:
     serverSocket.listen(1)
     while True:
         connectionSocket, addr = serverSocket.accept()
-        #Acceptarà solament els missatges del servidor
         if addr[0] == ip:
             connectionSocket, addr = serverSocket.accept()
             messagefromclient = connectionSocket.recv(1024)
