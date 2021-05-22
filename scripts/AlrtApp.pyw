@@ -72,8 +72,6 @@ tb_exists = ("SELECT name FROM sqlite_master WHERE type='table' AND name='users'
 if not conn.execute(tb_exists).fetchone():
     conn.execute(tb_create)
     conn.commit()
-    requests.get(url = url, params=INSERT)
-    conn.execute("INSERT INTO users(user,uid) VALUES (?,?)",(username,uid,))
 us_exists = conn.execute("SELECT user,uid FROM users WHERE user LIKE ?",('{}%'.format(username),))
 us = us_exists.fetchone()
 if str(us) == 'None' :
