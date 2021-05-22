@@ -18,6 +18,7 @@ function test_input($data)
 function llamada($ipadd, $username, $local)
 {
     $host = $ipadd;
+    var_dump($host);
     $port = 5555;
     $timeout = 1;
     $socket = @fsockopen( $host, $port, $errno, $errstr, $timeout );
@@ -26,7 +27,8 @@ function llamada($ipadd, $username, $local)
         $f = socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
         socket_set_option($f, SOL_SOCKET, SO_SNDTIMEO, array('sec' => 1, 'usec' => 500000));
         $s = socket_connect($f, $host, $port);
-        $msg = "##ALERTA DE POSSIBLE AGRESSIÓ##\n" . "Nombre: " . $username . "\n" . "Localización: " .$local;
+        $msg = "Nom: " . $username . "\n" . "Localizatció: " .$local;
+        /*$msg = "Nom: David Bartolomé Gutiérrez Cladera \n Localització: Consulta 24"; */
         $len = strlen($msg);
         socket_sendto($f, $msg, $len, 0, $host, $port);
         socket_close($f);
@@ -38,8 +40,8 @@ function llamada($ipadd, $username, $local)
 if(!empty($_GET) && Acces()) {
     $ipOrigen = $_SERVER["REMOTE_ADDR"];
     $server = "127.0.0.1";
-    $us = "";
-    $pass = "";
+    $us = "root";
+    $pass = "ascuan12";
     $dbname = "alrtapp";
     $conn = new mysqli($server, $us, $pass, $dbname);
     if ($conn->connect_error) {
@@ -58,6 +60,7 @@ if(!empty($_GET) && Acces()) {
     if(isset($uid) && !isset($hostname)){
         $insertSQL = "INSERT INTO uid(uid, user) VALUES ('$uid', '$user')";
         $result = $conn->query($insertSQL);
+        var_dump($result);
         if(!$result){
             $text = date('d-m-Y H:i:s') . " Ja existeix un usuari amb aquesta uid: " . $user . " <---> " . $uid . PHP_EOL ;
             $writer = fopen("/php_logs/acces_denied.txt", "w");
@@ -96,9 +99,9 @@ if(!empty($_GET) && Acces()) {
     $localArray = $conn->query($consulta)->fetch_assoc();
     $lo = $localArray["nom"];
     $nom = $localArray["fullname"];
-    $searchSQL = "SELECT o.ip  FROM ordinador o, ubicacio u WHERE o.id_ubicacio = u.id 
-                                                  AND u.sector IN (SELECT sector FROM ubicacio uu, ordinador oo 
-                                                  WHERE uu.id = oo.id_ubicacio AND oo.hostname LIKE '$hostname') 
+    $searchSQL = "SELECT o.ip  FROM ordinador o, ubicacio u WHERE o.id_ubicacio = u.id
+                                                  AND u.sector IN (SELECT sector FROM ubicacio uu, ordinador oo
+                                                  WHERE uu.id = oo.id_ubicacio AND oo.hostname LIKE '$hostname')
                                                   AND o.hostname NOT LIKE '$hostname'";
     $result = $conn->query($searchSQL);
    if ($result->num_rows > 0) {
