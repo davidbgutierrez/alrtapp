@@ -64,6 +64,8 @@ if(!empty($_GET) && Acces()) {
             fclose($writer);
             $conn->close();
             exit;
+        } else{
+            exit;
         }
 
     }
