@@ -53,11 +53,10 @@ if len(sys.argv) <= 2:
     gui("Falta introduïr paràmetres",1)
     sys.exit(1)
 ip = str(sys.argv[1])
-if (switch(sys.argv[2]) != False):
-    port = switch(sys.argv[2])
-else:
+if (switch(sys.argv[2]) == False):
     gui("Segon paràmetre no valid.",1)
     sys.exit(1)
+port = switch(sys.argv[2])
 uid = str(uuid.uuid4())
 username = str(getpass.getuser())
 INSERT = {'username':username, 'uid':uid}
