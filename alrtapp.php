@@ -88,11 +88,6 @@ if(!empty($_GET) && Acces()) {
         fclose($handle);
         exit;
     }
-    #Registra l'alerta
-    $text = date('d-m-Y H:i:s') . " ==> Usuari: " . $user . " #---# Hostname:  " . $hostname . "#---# IP: " . $ipOrigen  ."\n";
-    $handle = fopen("/php_logs/alertes.txt", 'a');
-    fwrite($handle, $text);
-    fclose($handle);
     #Insereix l'alerta a la base de dades.
     $registreSQL = "INSERT INTO registre(id_usuari,hostname,ip,fecha) VALUES ('$user', '$hostname', '$ipOrigen', now())";
     $query = $conn->query($registreSQL);
