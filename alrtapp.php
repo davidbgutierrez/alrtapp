@@ -62,6 +62,7 @@ if(!empty($_GET) && Acces()) {
             $writer = fopen("/php_logs/acces_denied.txt", "w");
             fwrite($writer, $text);
             fclose($writer);
+            $conn->close();
             exit;
         }
 
@@ -74,6 +75,7 @@ if(!empty($_GET) && Acces()) {
         $handle = fopen($filename, 'a');
         fwrite($handle, $text);
         fclose($handle);
+        $conn->close();
         exit;
     }
     $uidSQL = "SELECT user FROM uid WHERE uid LIKE '$uid' AND user LIKE '$user'";
@@ -83,6 +85,7 @@ if(!empty($_GET) && Acces()) {
         $handle = fopen($filename, 'a');
         fwrite($handle, $text);
         fclose($handle);
+        $conn->close();
         exit;
     }
     $registreSQL = "INSERT INTO registre(id_usuari,hostname,ip,fecha) VALUES ('$user', '$hostname', '$ipOrigen', now())";
@@ -106,28 +109,31 @@ if(!empty($_GET) && Acces()) {
         }
     }
  $sectorsSQL = "SELECT count(*) AS total FROM ordinador o, ubicacio u WHERE o.id_ubicacio = u.id AND u.sector IN (SELECT uu.sector FROM ordinador oo, ubicacio uu WHERE oo.id_ubicacio = uu.id AND oo.hostname LIKE '$hostname') GROUP BY u.sector";
-    $count = $conn->query($sectorsSQL)->fetch_assoc();
-    $sectors = (int)$count["total"];
-    if( $off > $sectors / 2 ){
-        $neighbor = $conn->query("SELECT u.sector AS total FROM ordinador o, ubicacio u WHERE o.id_ubicacio = u.id AND o.hostname LIKE '$hostname'")->fetch_assoc();
-        $count = count($neighbors[$neighbor]);
-        for ($x = 0;$x <= $count; $x++ ){
-            $sector = $neighbors[$neighbor][$x];
-            $vecinos = "SELECT o.ip, u.nom FROM ordinador o, ubicacio u WHERE o.id_ubicacio = u.id AND u.sector =  $sector";
-            $result = $conn->query($vecinos);
-                while ($row = $result->fetch_assoc()) {
-                    $contador = 0;
-                    $ip = $row["ip"];
-                    $lo = $row["nom"];
-                    if(!llamada($ip,$user,$lo)){
-                        $contador++;
-                    }
-                }
-                if($contador < $result->num_rows / 2){
-                    break;
-                }
-            }
+ $count = $conn->query($sectorsSQL)->fetch_assoc();
+ $sectors = (int)$count["total"];
+   if( $off > $sectors / 2 ){
+       $neighbor = $conn->query("SELECT u.sector AS total FROM ordinador o, ubicacio u WHERE o.id_ubicacio = u.id AND o.hostname LIKE '$hostname'")->fetch_assoc();
+       $count = count($neighbors[$neighbor]);
+       for ($x = 0;$x <= $count; $x++ ){
+           $sector = $neighbors[$neighbor][$x];
+           $vecinos = "SELECT o.ip, u.nom FROM ordinador o, ubicacio u WHERE o.id_ubicacio = u.id AND u.sector =  $sector";
+           $result = $conn->query($vecinos);
+               while ($row = $result->fetch_assoc()) {
+                   $contador = 0;
+                   $ip = $row["ip"];
+                   $lo = $row["nom"];
+                   if(!llamada($ip,$user,$lo)){
+                       $contador++;
+                   }
+               }
+               if($contador < $result->num_rows / 2){
+                  $conn->close();
+                  break;
+               }
         }
+    } else{
+       $conn->close();
+    }
 } else {
     echo "Accés denegat";
 }
