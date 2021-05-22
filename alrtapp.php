@@ -17,7 +17,6 @@ function test_input($data)
 function llamada($ipadd, $username, $local)
 {
     $host = $ipadd;
-    var_dump($host);
     $port = 5555;
     $timeout = 1;
     $socket = @fsockopen( $host, $port, $errno, $errstr, $timeout );
@@ -38,8 +37,8 @@ function llamada($ipadd, $username, $local)
 if(!empty($_GET) && Acces()) {
     $ipOrigen = $_SERVER["REMOTE_ADDR"];
     $server = "127.0.0.1";
-    $us = "root";
-    $pass = "ascuan12";
+    $us = "";
+    $pass = "";
     $dbname = "alrtapp";
     $conn = new mysqli($server, $us, $pass, $dbname);
     if ($conn->connect_error) {
