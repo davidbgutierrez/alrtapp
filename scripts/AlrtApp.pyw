@@ -36,8 +36,8 @@ def gui(mess,check):
     x = (ws/2) - (w/2)
     y = (hs/2) - (h/2)
     root.geometry('%dx%d+%d+%d' % (w, h, x, y))
-    lbl2 = Label (root, text=mess, font="verdana", bg=back, fg=fore)
-    lbl2.place(relx=0.5, rely=0.5, anchor=CENTER)
+    missatge = Label (root, text=mess, font="verdana", bg=back, fg=fore)
+    missatge.place(relx=0.5, rely=0.5, anchor=CENTER)
     root.iconbitmap('icono.ico')
     root.mainloop()
 def sortir(systray):
