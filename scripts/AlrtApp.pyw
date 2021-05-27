@@ -62,16 +62,37 @@ uid = str(uuid.uuid4())
 username = str(getpass.getuser())
 INSERT = {'username':username, 'uid':uid}
 url = port+ip+"/alrtapp.php"
-def cridada():
+def enviar():
     conn = sqlite3.connect("uid.db")
     us_exists = conn.execute("SELECT user,uid FROM users WHERE user LIKE ?",('{}%'.format(username),))
     us = us_exists.fetchone()
     ALERTA = {'username':username, 'uid':us[1], 'hostname': hostname}
     requests.get(url = url, params=ALERTA)
     conn.close()
-def on_press(key):
-   if key == Key.f6:
-       cridada()
+def cridada():
+    root = Tk()
+    w = 200
+    h = 100
+    back = "firebrick3"
+    fore = "ghost white"
+    title = "ALERTA D'AGRESSIÓ"
+    yesButton =  Button(root, text="Si",command=enviar, font="verdana", bg="pale green", fg="black", width=9)
+    yesButton.place(relx=1.0, rely=1.0, anchor=SE)
+    noButton = Button(root, text="No", command=root.destroy, font="verdana", bg="gold", fg="BLACK", width=9)
+    noButton.place(relx=0, rely=1, anchor=SW)
+    root.resizable(0, 0)
+    root.config(bg=back)
+    root.wm_title(title)
+    root.wm_attributes("-topmost", 1)
+    ws = root.winfo_screenwidth()
+    hs = root.winfo_screenheight()
+    x = (ws/2) - (w/2)
+    y = (hs/2) - (h/2)
+    root.geometry('%dx%d+%d+%d' % (w, h, x, y))
+    missatge = Label (root, text="Enviar alerta?", font="verdana", bg=back, fg=fore)
+    missatge.place(relx=0.5, rely=0.5, anchor=CENTER)
+    root.mainloop()
+
 try:
     requests.get(url = url)
 except requests.ConnectionError:
@@ -97,8 +118,6 @@ if str(us) == 'None' :
  serverSocket.bind(('', serverPort))
  serverSocket.listen(1)
 while True:
-    with Listener(on_press=on_press) as listener:
-        listener.join()
     connectionSocket, addr = serverSocket.accept()
     if addr[0] == ip:
         connectionSocket, addr = serverSocket.accept()
