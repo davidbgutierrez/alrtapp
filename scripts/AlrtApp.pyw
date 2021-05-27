@@ -69,9 +69,9 @@ def cridada():
     ALERTA = {'username':username, 'uid':us[1], 'hostname': hostname}
     requests.get(url = url, params=ALERTA)
     conn.close()
- def on_press(key):
-    if key == Key.f6:
-        cridada()
+def on_press(key):
+   if key == Key.f6:
+       cridada()
 try:
     requests.get(url = url)
 except requests.ConnectionError:
