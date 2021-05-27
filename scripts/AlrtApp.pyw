@@ -4,6 +4,7 @@ from subprocess import check_output
 from subprocess import DEVNULL
 from socket import *
 from infi.systray import SysTrayIcon
+from pynput.keyboard import Key, Listener
 def gui(mess,check):
     root = Tk()
     def lock():
@@ -61,6 +62,16 @@ uid = str(uuid.uuid4())
 username = str(getpass.getuser())
 INSERT = {'username':username, 'uid':uid}
 url = port+ip+"/alrtapp.php"
+def cridada():
+    conn = sqlite3.connect("uid.db")
+    us_exists = conn.execute("SELECT user,uid FROM users WHERE user LIKE ?",('{}%'.format(username),))
+    us = us_exists.fetchone()
+    ALERTA = {'username':username, 'uid':us[1], 'hostname': hostname}
+    requests.get(url = url, params=ALERTA)
+    conn.close()
+ def on_press(key):
+    if key == Key.f6:
+        cridada()
 try:
     requests.get(url = url)
 except requests.ConnectionError:
@@ -78,14 +89,7 @@ if str(us) == 'None' :
     requests.get(url = url, params=INSERT)
     conn.execute("INSERT INTO users(user,uid) VALUES (?,?)",(username,uid,))
     conn.commit()
-if '1' in sys.argv :
-    us_exists = conn.execute("SELECT user,uid FROM users WHERE user LIKE ?",('{}%'.format(username),))
-    us = us_exists.fetchone()
-    ALERTA = {'username':username, 'uid':us[1], 'hostname': hostname}
-    requests.get(url = url, params=ALERTA)
-    conn.close()
 else:
-    conn.commit()
     conn.close()
     systray = SysTrayIcon("icono.ico", "AlrtApp", on_quit=sortir)
     systray.start()
@@ -94,6 +98,8 @@ else:
     serverSocket.bind(('', serverPort))
     serverSocket.listen(1)
     while True:
+        with Listener(on_press=on_press) as listener:
+            listener.join()
         connectionSocket, addr = serverSocket.accept()
         if addr[0] == ip:
             connectionSocket, addr = serverSocket.accept()
