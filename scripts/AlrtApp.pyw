@@ -5,6 +5,7 @@ from subprocess import DEVNULL
 from socket import *
 from infi.systray import SysTrayIcon
 from pynput.keyboard import Key, Listener
+from pynput import keyboard
 def gui(mess,check):
     root = Tk()
     def lock():
@@ -41,6 +42,9 @@ def gui(mess,check):
     missatge.place(relx=0.5, rely=0.5, anchor=CENTER)
     root.iconbitmap('icono.ico')
     root.mainloop()
+def on_press(key):
+   if key == Key.f6:
+       cridada()   
 def sortir(systray):
     systray.shutdown()
     sys.exit(1)
@@ -117,6 +121,8 @@ if str(us) == 'None' :
  serverSocket = socket(AF_INET, SOCK_STREAM)
  serverSocket.bind(('', serverPort))
  serverSocket.listen(1)
+listener = keyboard.Listener(on_press=on_press)
+listener.start()
 while True:
     connectionSocket, addr = serverSocket.accept()
     if addr[0] == ip:
