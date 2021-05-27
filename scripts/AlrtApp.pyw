@@ -89,21 +89,20 @@ if str(us) == 'None' :
     requests.get(url = url, params=INSERT)
     conn.execute("INSERT INTO users(user,uid) VALUES (?,?)",(username,uid,))
     conn.commit()
-else:
-    conn.close()
-    systray = SysTrayIcon("icono.ico", "AlrtApp", on_quit=sortir)
-    systray.start()
-    serverPort = 5555
-    serverSocket = socket(AF_INET, SOCK_STREAM)
-    serverSocket.bind(('', serverPort))
-    serverSocket.listen(1)
-    while True:
-        with Listener(on_press=on_press) as listener:
-            listener.join()
+ conn.close()
+ systray = SysTrayIcon("icono.ico", "AlrtApp", on_quit=sortir)
+ systray.start()
+ serverPort = 5555
+ serverSocket = socket(AF_INET, SOCK_STREAM)
+ serverSocket.bind(('', serverPort))
+ serverSocket.listen(1)
+while True:
+    with Listener(on_press=on_press) as listener:
+        listener.join()
+    connectionSocket, addr = serverSocket.accept()
+    if addr[0] == ip:
         connectionSocket, addr = serverSocket.accept()
-        if addr[0] == ip:
-            connectionSocket, addr = serverSocket.accept()
-            messagefromclient = connectionSocket.recv(1024)
-            message = str(messagefromclient, 'utf-8')
-            winsound.MessageBeep(winsound.MB_OK)
-            gui(message,0)
+        messagefromclient = connectionSocket.recv(1024)
+        message = str(messagefromclient, 'utf-8')
+        winsound.MessageBeep(winsound.MB_OK)
+        gui(message,0)
