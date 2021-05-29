@@ -1,5 +1,5 @@
 from tkinter import *
-import winsound, sqlite3, getpass, uuid, sys, requests, ctypes, pkg_resources.py2_warn
+import sqlite3, getpass, uuid, sys, requests, ctypes, pkg_resources.py2_warn
 from subprocess import check_output
 from subprocess import DEVNULL
 from socket import *
@@ -14,7 +14,7 @@ def gui(mess,check):
     if check == 1:
         w = 350
         h = 100
-        back = "LIGHT cyan"
+        back = "LIGHT CYAN"
         fore = "RED"
         title = "ERROR"
         exitButton = Button(root, text="Sortir", command=root.destroy, font="verdana", bg="KHAKI", fg="BLACK", width=20)
@@ -22,12 +22,12 @@ def gui(mess,check):
     else:
         w = 500
         h = 250
-        back = "firebrick3"
-        fore = "ghost white"
+        back = "FIREBRICK3"
+        fore = "GHOST WHITE"
         title = "ALERTA D'AGRESSIÓ"
-        goButton =  Button(root, text="Acudir",command=lock, font="verdana", bg="pale green", fg="black", width=19)
+        goButton =  Button(root, text="Acudir",command=lock, font="verdana", bg="PALE GREEN", fg="BLACK", width=19)
         goButton.place(relx=1.0, rely=1.0, anchor=SE)
-        exitButton = Button(root, text="Sortir", command=root.destroy, font="verdana", bg="gold", fg="BLACK", width=19)
+        exitButton = Button(root, text="Sortir", command=root.destroy, font="verdana", bg="GOLD", fg="BLACK", width=19)
         exitButton.place(relx=0, rely=1, anchor=SW)
     root.resizable(0, 0)
     root.config(bg=back)
@@ -42,12 +42,6 @@ def gui(mess,check):
     missatge.place(relx=0.5, rely=0.5, anchor=CENTER)
     root.iconbitmap('icono.ico')
     root.mainloop()
-def on_press(key):
-   if key == Key.f6:
-       cridada()   
-def sortir(systray):
-    systray.shutdown()
-    sys.exit(1)
 def switch(var):
     return{
         '80': "http://",
@@ -66,23 +60,29 @@ uid = str(uuid.uuid4())
 username = str(getpass.getuser())
 INSERT = {'username':username, 'uid':uid}
 url = port+ip+"/alrtapp.php"
-def enviar():
-    conn = sqlite3.connect("uid.db")
-    us_exists = conn.execute("SELECT user,uid FROM users WHERE user LIKE ?",('{}%'.format(username),))
-    us = us_exists.fetchone()
-    ALERTA = {'username':username, 'uid':us[1], 'hostname': hostname}
-    requests.get(url = url, params=ALERTA)
-    conn.close()
 def cridada():
     root = Tk()
-    w = 200
-    h = 100
-    back = "firebrick3"
+    def no():
+        root.destroy()
+    def enviar():   
+        conn = sqlite3.connect("uid.db")
+        us_exists = conn.execute("SELECT user,uid FROM users WHERE user LIKE ?",('{}%'.format(username),))
+        us = us_exists.fetchone()
+        conn.close()
+        root.destroy()
+        ALERTA = {'username':username, 'uid':us[1], 'hostname': hostname}
+        try:
+            requests.get(url = url, params=ALERTA)
+        except requests.ConnectionError:
+            gui("Error de connexió amb el servidor",1)
+    w = 250
+    h = 150
+    back = "dark blue"
     fore = "ghost white"
-    title = "ALERTA D'AGRESSIÓ"
-    yesButton =  Button(root, text="Si",command=enviar, font="verdana", bg="pale green", fg="black", width=9)
+    title = "ALERTA"
+    yesButton =  Button(root, text="Si",command=enviar, font="verdana", bg="green", fg="white", width=9)
     yesButton.place(relx=1.0, rely=1.0, anchor=SE)
-    noButton = Button(root, text="No", command=root.destroy, font="verdana", bg="gold", fg="BLACK", width=9)
+    noButton = Button(root, text="No", command=no, font="verdana", bg="red", fg="white", width=9)
     noButton.place(relx=0, rely=1, anchor=SW)
     root.resizable(0, 0)
     root.config(bg=back)
@@ -96,7 +96,9 @@ def cridada():
     missatge = Label (root, text="Enviar alerta?", font="verdana", bg=back, fg=fore)
     missatge.place(relx=0.5, rely=0.5, anchor=CENTER)
     root.mainloop()
-
+def on_press(key):
+   if key == Key.f6:
+       cridada()
 try:
     requests.get(url = url)
 except requests.ConnectionError:
@@ -114,20 +116,26 @@ if str(us) == 'None' :
     requests.get(url = url, params=INSERT)
     conn.execute("INSERT INTO users(user,uid) VALUES (?,?)",(username,uid,))
     conn.commit()
- conn.close()
- systray = SysTrayIcon("icono.ico", "AlrtApp", on_quit=sortir)
- systray.start()
- serverPort = 5555
- serverSocket = socket(AF_INET, SOCK_STREAM)
- serverSocket.bind(('', serverPort))
- serverSocket.listen(1)
+conn.close()
+def sortir(systray):
+    serverSocket.close()
+    systray.QUIT
+systray = SysTrayIcon("icono.ico", "AlrtApp", on_quit=sortir)
+systray.start()
+serverPort = 5555
+serverSocket = socket(AF_INET, SOCK_STREAM)
+serverSocket.bind(('', serverPort))
+serverSocket.listen(1)
 listener = keyboard.Listener(on_press=on_press)
 listener.start()
-while True:
-    connectionSocket, addr = serverSocket.accept()
-    if addr[0] == ip:
+listener.join()
+try:
+    while True:
         connectionSocket, addr = serverSocket.accept()
-        messagefromclient = connectionSocket.recv(1024)
-        message = str(messagefromclient, 'utf-8')
-        winsound.MessageBeep(winsound.MB_OK)
-        gui(message,0)
+        if addr[0] == ip:
+            connectionSocket, addr = serverSocket.accept()
+            messagefromclient = connectionSocket.recv(1024)
+            message = str(messagefromclient, 'utf-8')
+            gui(message,0)
+except OSError:
+        sys.exit(1)
