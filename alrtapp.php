@@ -26,10 +26,10 @@ function llamada($ipadd, $username, $local,$clau,$vi,$se)
         $f = socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
         socket_set_option($f, SOL_SOCKET, SO_SNDTIMEO, array('sec' => 1, 'usec' => 500000));
         $s = socket_connect($f, $host, $port);
-	    $message = $se . "\n" . " Nom: " . $username . " \n " . "Localizatció: " .$local;
-	    $cipher = "aes-256-cbc";
-	    $ivlen = openssl_cipher_iv_length($cipher);
-	    $ciphertext = openssl_encrypt($message, $cipher, $clau, $options=0, $ivint);
+	$message = $se . "\n" . " Nom: " . $username . " \n " . "Localizatció: " .$local;
+	$cipher = "aes-256-cbc";
+	$ivlen = openssl_cipher_iv_length($cipher);
+	$ciphertext = openssl_encrypt($message, $cipher, $clau, $options=0, $ivint);
         $len = strlen($ciphertext);
         socket_sendto($f, $ciphertext, $len, 0, $host, $port);
         socket_close($f);
