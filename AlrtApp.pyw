@@ -1,5 +1,9 @@
 from tkinter import *
-import sqlite3, time, getpass, uuid, sys, requests, threading, ctypes, pkg_resources.py2_warn
+import sqlite3, time, getpass, uuid, sys, re, requests, threading, ctypes, random, string, pkg_resources.py2_warn
+from Crypto.Cipher import AES
+from base64 import b64decode
+from Crypto import Random
+from Crypto.Util.Padding import unpad
 from subprocess import check_output
 from subprocess import DEVNULL
 from socket import *
@@ -65,12 +69,37 @@ try:
 except requests.ConnectionError:
     gui("Error de connexió amb el servidor",1)
     sys.exit(1)
-conn = sqlite3.connect("uid.db")
-tb_create = ('''CREATE TABLE users(user,uid)''')
+conn = sqlite3.connect("database.db")
+tb_uid = ('''CREATE TABLE users(user,uid)''')
+tb_cypher= ('''CREATE TABLE cypher(key,iv,secret)''')
 tb_exists = ("SELECT name FROM sqlite_master WHERE type='table' AND name='users'")
+cypher_exists = ("SELECT name FROM sqlite_master WHERE type='table' AND name='cypher'")
 if not conn.execute(tb_exists).fetchone():
-    conn.execute(tb_create)
+    conn.execute(tb_uid)
     conn.commit()
+if not conn.execute(cypher_exists).fetchone():
+    conn.execute(tb_cypher)
+    conn.commit()
+cur = conn.cursor()
+cur.execute('SELECT COUNT(*) FROM cypher')
+cur_result = cur.fetchone()
+secret_1 = ''.join((random.choice(string.ascii_letters) for x in range(25))) 
+secret_1 += ''.join((random.choice(string.digits) for x in range(25))) 
+sam_list = list(secret_1)
+random.shuffle(sam_list)
+secret = ''.join(sam_list)
+iv= ''.join((random.choice(string.digits) for x in range(16)))  
+key = ''.join((random.choice(string.ascii_letters) for x in range(16)))
+KEY = {'hostname': hostname, 'key': key, 'iv': iv, 'secret':secret}
+if cur_result[0] == 0:
+	try:
+		requests.get(url = url, params=KEY)
+	except requests.ConnectionError:
+		conn.close()
+		gui("Error de connexió amb el servidor",1)
+		sys.exit(1)
+conn.execute("INSERT INTO cypher(key,iv,secret) VALUES (?,?,?)",(key,iv,secret))
+conn.commit()
 us_exists = conn.execute("SELECT user,uid FROM users WHERE user LIKE ?",('{}%'.format(username),))
 us = us_exists.fetchone()
 if str(us) == 'None' :
@@ -125,13 +154,25 @@ def sck():
     serverSocket.listen(1)
     try:
         while True:
-            time.sleep(0.1)
             connectionSocket, addr = serverSocket.accept()
             if addr[0] == ip:
                 connectionSocket, addr = serverSocket.accept()
                 messagefromclient = connectionSocket.recv(1024)
-                message = str(messagefromclient, 'utf-8')
-                gui(message,0)
+                conn = sqlite3.connect("database.db")
+                alg = conn.execute('SELECT key,iv,secret FROM cypher')
+                cypher = alg.fetchone()
+                key = bytes(cypher[0]+'\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0', 'utf-8')
+                iv = bytes(cypher[1],'utf-8')
+                obj2 = AES.new(key, AES.MODE_CBC, iv)
+                print(messagefromclient)
+                plaintext = obj2.decrypt(b64decode(messagefromclient))
+                plaintext = unpad(plaintext, AES.block_size)
+                message = str(plaintext,'utf-8')
+                secret = cypher[2]+'\n'
+                conn.close()
+                if re.search(secret,message):
+                    filtrat = message.replace(secret,"")
+                    gui(filtrat,0)
     except OSError:
         sys.exit(1)
 def fn():
@@ -154,4 +195,3 @@ def sortir(systray):
 systray = SysTrayIcon("icono.ico", "AlrtApp", on_quit=sortir)
 systray.start() 
 main()
-
