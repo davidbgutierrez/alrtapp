@@ -164,7 +164,6 @@ def sck():
                 key = bytes(cypher[0]+'\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0', 'utf-8')
                 iv = bytes(cypher[1],'utf-8')
                 obj2 = AES.new(key, AES.MODE_CBC, iv)
-                print(messagefromclient)
                 plaintext = obj2.decrypt(b64decode(messagefromclient))
                 plaintext = unpad(plaintext, AES.block_size)
                 message = str(plaintext,'utf-8')
