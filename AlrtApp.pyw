@@ -175,8 +175,8 @@ def sck():
                 connectionSocket, addr = serverSocket.accept()
                 messagefromclient = connectionSocket.recv(1024)
                 conn = sqlite3.connect("database.db")
-                alg = conn.execute('SELECT key,ivi,secret FROM cypher')
-                cypher = alg.fetchone()
+                cypher= conn.execute('SELECT key,ivi,secret FROM cypher').fetchone()
+		conn.close()
                 key = b''+cypher[0]+'\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0'
                 iv = b''+cypher[1]+''
                 obj2 = AES.new(key, AES.MODE_CBC, iv)
@@ -185,7 +185,6 @@ def sck():
                     plaintext = unpad(plaintext, AES.block_size)
                     message = str(plaintext,'utf-8')
                     secret = cypher[2]+' \n'
-                    conn.close()
                     if re.search(secret,message):
                         filtrat = message.replace (secret,"")
                         gui(filtrat,0)
