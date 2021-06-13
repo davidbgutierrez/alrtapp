@@ -174,7 +174,7 @@ def sck():
             if addr[0] == ip:
                 connectionSocket, addr = serverSocket.accept()
                 messagefromclient = connectionSocket.recv(1024)
-                conn = sqlite3.connect("uid.db")
+                conn = sqlite3.connect("database.db")
                 alg = conn.execute('SELECT key,ivi,secret FROM cypher')
                 cypher = alg.fetchone()
                 key = b''+cypher[0]+'\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0'
