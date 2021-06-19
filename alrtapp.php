@@ -26,10 +26,10 @@ function llamada($ipadd, $username, $local,$clau,$vi,$se)
         $f = socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
         socket_set_option($f, SOL_SOCKET, SO_SNDTIMEO, array('sec' => 1, 'usec' => 500000));
         $s = socket_connect($f, $host, $port);
-	$message = $se . "\n" . " Nom: " . $username . " \n " . "Localizatció: " .$local;
-	$cipher = "aes-256-cbc";
-	$ivlen = openssl_cipher_iv_length($cipher);
-	$ciphertext = openssl_encrypt($message, $cipher, $clau, $options=0, $ivint);
+	    $message = $se . "  " . " Nom: " . $username . " \n " . "Localització: " .$local;
+	    $cipher = "aes-256-cbc";
+	    $ivlen = openssl_cipher_iv_length($cipher);
+	    $ciphertext = openssl_encrypt($message, $cipher, $clau, $options=0, $ivint);
         $len = strlen($ciphertext);
         socket_sendto($f, $ciphertext, $len, 0, $host, $port);
         socket_close($f);
@@ -39,6 +39,7 @@ function llamada($ipadd, $username, $local,$clau,$vi,$se)
     }
 }
 if(!empty($_GET) && Acces()) {
+    $aes = 0;
     $filename = '/php_logs/acces_denied.txt';
     $ipOrigen = $_SERVER["REMOTE_ADDR"];
     $server = "localhost";
@@ -51,6 +52,7 @@ if(!empty($_GET) && Acces()) {
     }
     if(isset($_GET["hostname"])){
         $hostname = test_input($_GET["hostname"]);
+        $aes++;
     }
     if(isset($_GET["username"])){
         $user = test_input($_GET["username"]);
@@ -60,24 +62,25 @@ if(!empty($_GET) && Acces()) {
     }
     if(isset($_GET["secret"])){
         $secret = test_input($_GET["secret"]);
+        $aes++;
     }
     if(isset($_GET["key"])){
         $key = test_input($_GET["key"]);
+        $aes++;
     }
     if(isset($_GET["iv"])){
         $iv = test_input($_GET["iv"]);
+        $aes++;
     }
-    if(isset($_GET["secret"])){
-        $checkSQL = "SELECT * FROM ordinador WHERE `key` LIKE '$key' OR iv LIKE '$iv' OR secret LIKE '$secret' AND ip LIKE '$ipOrigen'";
+    if($aes == 4){
+        $checkSQL = "SELECT c.hostname FROM ordinador o, cypher c WHERE o.hostname = c.hostname c.`key` LIKE '$key' OR c.iv LIKE '$iv' OR c.secret LIKE '$secret' AND o.ip LIKE '$ipOrigen'";
         $check = $conn->query($checkSQL);
-        if($check->num_rows == 0){
-            $secretSQL = "UPDATE ordinador SET `key`='$key', iv='$iv', secret= '$secret' WHERE ip LIKE '$ipOrigen'";
+        if($check->num_rows == 1){
+            $secretSQL = "UPDATE cypher SET `key`='$key', iv='$iv', secret='$secret' WHERE hostname LIKE '$hostname'";
             $result = $conn->query($secretSQL);
         } else{
-            $text = date('d-m-Y H:i:s') . "S'ha intentat introduïr dades noves sense consentiment: ". $ipOrigen. PHP_EOL ;
-            $writer = fopen("/php_logs/acces_denied.txt", "w");
-            fwrite($writer, $text);
-            fclose($writer);
+            $x = $conn->query("INSERT INTO cypher(`key`,iv,secret) VALUES ('$key','$iv','$secret') WHERE hostname LIKE '$hostname'");
+            var_dump($x);
         }
         $conn->close();
         exit;
@@ -120,10 +123,14 @@ if(!empty($_GET) && Acces()) {
     $localArray = $conn->query($consulta)->fetch_assoc();
     $lo = $localArray["nom"];
     $nom = $localArray["fullname"];
-    $searchSQL = "SELECT o.ip, o.key, o.iv, o.secret  FROM ordinador o, ubicacio u WHERE o.id_ubicacio = u.id
-                                                  AND u.sector IN (SELECT sector FROM ubicacio uu, ordinador oo
-                                                  WHERE uu.id = oo.id_ubicacio AND oo.hostname LIKE '$hostname')
-                                                  AND o.hostname NOT LIKE '$hostname'";
+    $searchSQL = "SELECT o.ip, c.key, c.iv, c.secret
+    FROM ordinador o, ubicacio u, cypher c
+    WHERE o.id_ubicacio = u.id AND o.hostname = c.hostname
+    AND u.sector IN 
+        (SELECT sector 
+        FROM ubicacio uu, ordinador oo
+        WHERE uu.id = oo.id_ubicacio AND oo.hostname LIKE '$hostname')
+    AND o.hostname NOT LIKE '$hostname'";
     $result = $conn->query($searchSQL);
    if ($result->num_rows > 0) {
     $off = 0;
@@ -133,38 +140,38 @@ if(!empty($_GET) && Acces()) {
             $iv = $row["iv"];
             $secret = $row["secret"];
          if(!llamada($ip,$nom,$lo,$key,$iv,$secret)){
+            echo "Offline: " . $ip . "<br/>";
                 $off++;
-		echo "Offline: " . $ip . "<br/>";
-            }else{ echo "Online: " . $ip . "<br/>";
-}
+            }
         }
     }
- $sectorsSQL = "SELECT count(*) AS total FROM ordinador o, ubicacio u WHERE o.id_ubicacio = u.id AND u.sector IN (SELECT uu.sector FROM ordinador oo, ubicacio uu WHERE oo.id_ubicacio = uu.id AND oo.hostname LIKE '$hostname') GROUP BY u.sector";
- $count = $conn->query($sectorsSQL)->fetch_assoc();
- $sectors = (int)$count["total"];
-   if( $off > $sectors / 2 ){
-       $neighbor = $conn->query("SELECT u.sector AS total FROM ordinador o, ubicacio u WHERE o.id_ubicacio = u.id AND o.hostname LIKE '$hostname'")->fetch_assoc();
-       $count = count($neighbors[$neighbor]);
-       for ($x = 0;$x <= $count; $x++ ){
-           $sector = $neighbors[$neighbor][$x];
-           $vecinos = "SELECT o.ip, u.nom FROM ordinador o, ubicacio u WHERE o.id_ubicacio = u.id AND u.sector =  $sector";
-           $result = $conn->query($vecinos);
-               while ($row = $result->fetch_assoc()) {
-                   $contador = 0;
-                   $ip = $row["ip"];
-                   $lo = $row["nom"];
-                   if(!llamada($ip,$user,$lo)){
-                       $contador++;
-                   }
-               }
-               if($contador < $result->num_rows / 2){
-                  $conn->close();
-                  break;
-               }
-        }
-    } else{
-       $conn->close();
-    }
+    $sectorsSQL = "SELECT count(*) AS total FROM ordinador o, ubicacio u WHERE o.id_ubicacio = u.id AND u.sector IN (SELECT uu.sector FROM ordinador oo, ubicacio uu WHERE oo.id_ubicacio = uu.id AND oo.hostname LIKE '$hostname') GROUP BY u.sector";
+    $count = $conn->query($sectorsSQL)->fetch_assoc();
+      if( $off > $sectors / 2 ){
+          $query = $conn->query("SELECT u.sector FROM ordinador o, ubicacio u WHERE o.id_ubicacio = u.id AND o.hostname LIKE '$hostname'")->fetch_assoc();
+          $neighbor= $query["sector"];
+          $count = count($neighbors[$neighbor]);
+          for ($x = 0;$x <= $count; $x++){
+              $contador = 0;
+              $sector = $neighbors[$neighbor][$x];
+              $vecinos = $conn->query("SELECT o.ip FROM ordinador o, ubicacio u, cypher c WHERE o.id_ubicacio = u.id AND o.hostname = c.hostname AND u.sector = $sector");
+                  while ($row = $vecinos->fetch_assoc()) {
+                    $ip = $row["ip"];
+                    $key = $row["key"];
+                    $iv = $row["iv"];
+                    $secret = $row["secret"];
+                    if(!llamada($ip,$nom,$lo,$key,$iv,$secret)){
+                      $contador++;
+                    }
+                  }
+                  if($contador < $vecinos->num_rows / 2){
+                     $conn->close();
+                     break;
+                  }
+           }
+       } else{
+          $conn->close();
+       }
 } else {
     echo "Accés denegat";
 }
