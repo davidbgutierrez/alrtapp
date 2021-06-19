@@ -129,7 +129,7 @@ def on_press(key):
         def no():
             root.destroy()
         def enviar():   
-            conn = sqlite3.connect("uid.db")
+            conn = sqlite3.connect("database.db")
             us_exists = conn.execute("SELECT user,uid FROM users WHERE user LIKE ?",('{}%'.format(username),))
             us = us_exists.fetchone()
             conn.close()
